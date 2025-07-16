@@ -1,0 +1,28 @@
+{
+  "functions": {
+    "api/send-joke.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    },
+    "api/auth.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    },
+    "api/test-joke.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/send-joke",
+      "schedule": "0 14 * * *"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/public/index.html"
+    }
+  ]
+}

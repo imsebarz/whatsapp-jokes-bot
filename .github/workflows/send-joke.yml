@@ -1,0 +1,22 @@
+name: Send WhatsApp Joke
+
+on:
+  schedule:
+    # Ejecutar cada 2 horas (0 */2 * * *)
+    - cron: '0 */2 * * *'
+  
+  # También permitir ejecución manual
+  workflow_dispatch:
+
+jobs:
+  send-joke:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Send joke via webhook
+      run: |
+        curl -X POST \
+          -H "Content-Type: application/json" \
+          https://whatsapp-jokes-5l89pbx8v-sebarzs-projects.vercel.app/api/webhook
+        
+        echo "✅ Joke webhook triggered"

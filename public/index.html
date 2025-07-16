@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Jokes Bot - Control Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #25D366;
+            text-align: center;
+        }
+        .button {
+            background-color: #25D366;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .button:hover {
+            background-color: #128C7E;
+        }
+        .button.danger {
+            background-color: #dc3545;
+        }
+        .button.danger:hover {
+            background-color: #c82333;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .qr-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr-container img {
+            max-width: 300px;
+            border: 2px solid #25D366;
+            border-radius: 10px;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b8daff;
+            color: #004085;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 WhatsApp Jokes Bot</h1>
+        <h2>Panel de Control</h2>
+        
+        <div class="info-box">
+            <h3>📋 Estado del Bot</h3>
+            <p><strong>Plataforma:</strong> Vercel Serverless</p>
+            <p><strong>Cron Jobs:</strong> Cada día a las 2:00 PM automáticamente</p>
+            <p><strong>Patrón:</strong> 2 chistes genéricos → 1 contextual</p>
+        </div>
+
+        <h3>🔐 Autenticación WhatsApp</h3>
+        <p>Si es la primera vez que usas el bot o si no está funcionando, autentica WhatsApp:</p>
+        <button class="button" onclick="authenticateWhatsApp()">🔐 Autenticar WhatsApp</button>
+        
+        <div class="qr-container" id="qrContainer"></div>
+
+        <h3>🧪 Pruebas Manuales</h3>
+        <p>Envía un chiste manualmente para probar que todo funciona:</p>
+        <button class="button" onclick="sendTestJoke()">🎭 Enviar Chiste de Prueba</button>
+        <button class="button" onclick="triggerWebhook()">🔗 Activar Webhook</button>
+
+        <h3>⚡ Frecuencia de Chistes</h3>
+        <div class="info-box">
+            <p><strong>⏰ Opción 1:</strong> Cron diario de Vercel (2:00 PM todos los días)</p>
+            <p><strong>🚀 Opción 2:</strong> GitHub Actions cada 2 horas (configurar después del deploy)</p>
+            <p><strong>📱 Opción 3:</strong> Activación manual desde este panel</p>
+        </div>
+
+        <h3>📊 Información</h3>
+        <div class="info-box">
+            <p><strong>🕐 Cron Schedule:</strong> El bot envía chistes automáticamente cada día a las 2:00 PM</p>
+            <p><strong>📱 Target Chat:</strong> Configurado via variables de entorno</p>
+            <p><strong>🤖 AI Model:</strong> GPT-4.1-mini para chistes económicos</p>
+            <p><strong>🔄 Patrón:</strong> Alterna entre chistes genéricos y contextuales</p>
+        </div>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function authenticateWhatsApp() {
+            showResult('Iniciando autenticación...', 'info');
+            
+            try {
+                const response = await fetch('/api/auth');
+                const data = await response.json();
+                
+                if (data.qrCode) {
+                    document.getElementById('qrContainer').innerHTML = 
+                        '<h4>📱 Escanea este QR con WhatsApp Web:</h4>' +
+                        '<img src="' + data.qrCode + '" alt="QR Code">' +
+                        '<p>Abre WhatsApp en tu teléfono > Dispositivos vinculados > Vincular dispositivo</p>';
+                    showResult('QR generado! Escanéalo con WhatsApp.', 'success');
+                } else if (data.status === 'ready') {
+                    showResult('✅ WhatsApp ya está autenticado y listo!', 'success');
+                } else {
+                    showResult('⚠️ Estado: ' + data.status + '. ' + data.message, 'error');
+                }
+            } catch (error) {
+                showResult('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        async function sendTestJoke() {
+            showResult('Enviando chiste de prueba...', 'info');
+            
+            try {
+                const response = await fetch('/api/test-joke', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('✅ Chiste enviado exitosamente!<br>' +
+                             'Tipo: ' + data.type + '<br>' +
+                             'Timestamp: ' + data.timestamp, 'success');
+                } else {
+                    showResult('❌ Error enviando chiste: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showResult('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        async function triggerWebhook() {
+            showResult('Activando webhook...', 'info');
+            
+            try {
+                const response = await fetch('/api/webhook', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('✅ Webhook activado exitosamente!<br>' +
+                             'Tipo: ' + data.type + '<br>' +
+                             'Timestamp: ' + data.timestamp, 'success');
+                } else {
+                    showResult('❌ Error en webhook: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showResult('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = 'result ' + (type === 'error' ? 'error' : 'success');
+            resultDiv.style.display = 'block';
+            
+            if (type === 'info') {
+                resultDiv.className = 'result';
+                resultDiv.style.backgroundColor = '#e7f3ff';
+                resultDiv.style.border = '1px solid #b8daff';
+                resultDiv.style.color = '#004085';
+            }
+        }
+    </script>
+</body>
+</html>
