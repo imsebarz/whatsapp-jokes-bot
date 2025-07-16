@@ -1,0 +1,21 @@
+{
+  "name": "whatsapp-jokes-bot",
+  "version": "1.0.0",
+  "description": "A simple bot that sends jokes to WhatsApp every 2 hours using OpenAI",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "find-group": "node find-group.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["whatsapp", "bot", "jokes", "openai"],
+  "author": "Sebastian Ruiz",
+  "license": "MIT",
+  "dependencies": {
+    "whatsapp-web.js": "^1.31.0",
+    "openai": "^4.28.0",
+    "qrcode-terminal": "^0.12.0",
+    "dotenv": "^16.3.1"
+  }
+}
