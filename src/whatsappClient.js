@@ -11,17 +11,26 @@ class WhatsAppClient {
     async initialize() {
         if (this.isInitialized) return this.client;
 
+        console.log('🔧 Getting Puppeteer configuration...');
         const puppeteerConfig = await getPuppeteerConfig();
+        console.log('✅ Puppeteer configuration obtained');
         
+        console.log('🤖 Creating WhatsApp client...');
         this.client = new Client({
             authStrategy: new LocalAuth(),
             puppeteer: puppeteerConfig
         });
+        console.log('✅ WhatsApp client created');
 
+        console.log('📡 Setting up event listeners...');
         this.setupEventListeners();
+        console.log('✅ Event listeners configured');
+        
         this.isInitialized = true;
         
+        console.log('🚀 Initializing WhatsApp client...');
         await this.client.initialize();
+        console.log('🎉 WhatsApp client fully initialized!');
         return this.client;
     }
 
@@ -184,7 +193,7 @@ class WhatsAppClient {
         try {
             const chats = await this.getChats();
             console.log('\n📋 Available chats:');
-            console.log('=' * 50);
+            console.log('='.repeat(50));
             console.log('Copy the ID of your target chat and update your .env file\n');
             
             // Separate groups and contacts

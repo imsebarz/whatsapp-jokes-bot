@@ -16,7 +16,7 @@ class WhatsAppJokesBot {
         );
         this.scheduler = new Scheduler(this.messageHandler, Config.jokeInterval);
 
-        this.setupEventHandlers();
+        // No configurar event handlers aquí todavía
     }
 
     setupEventHandlers() {
@@ -47,8 +47,18 @@ class WhatsAppJokesBot {
         console.log('');
 
         try {
+            console.log('🔍 Validating configuration...');
             Config.validate();
+            console.log('✅ Configuration validated');
+            
+            console.log('🔄 Initializing WhatsApp client...');
             await this.whatsappClient.initialize();
+            console.log('✅ WhatsApp client initialized');
+            
+            console.log('🔗 Setting up event handlers...');
+            // Configurar event handlers DESPUÉS de la inicialización
+            this.setupEventHandlers();
+            console.log('✅ Event handlers configured');
         } catch (error) {
             console.error('❌ Failed to start bot:', error.message);
             process.exit(1);
