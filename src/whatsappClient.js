@@ -1,25 +1,28 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const { getPuppeteerConfig } = require('./puppeteerConfig');
 
 class WhatsAppClient {
     constructor() {
+        this.client = null;
+        this.isInitialized = false;
+    }
+
+    async initialize() {
+        if (this.isInitialized) return this.client;
+
+        const puppeteerConfig = await getPuppeteerConfig();
+        
         this.client = new Client({
             authStrategy: new LocalAuth(),
-            puppeteer: {
-                headless: false,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--no-first-run',
-                    '--no-zygote',
-                    '--disable-gpu'
-                ]
-            }
+            puppeteer: puppeteerConfig
         });
 
         this.setupEventListeners();
+        this.isInitialized = true;
+        
+        await this.client.initialize();
+        return this.client;
     }
 
     setupEventListeners() {
@@ -49,15 +52,14 @@ class WhatsAppClient {
         });
     }
 
-    async initialize() {
-        return this.client.initialize();
-    }
-
     async destroy() {
-        return this.client.destroy();
+        if (this.client) {
+            return this.client.destroy();
+        }
     }
 
     async sendMessage(chatId, message) {
+        if (!this.client) await this.initialize();
         if (!chatId) {
             throw new Error('No target chat ID specified');
         }
@@ -65,11 +67,13 @@ class WhatsAppClient {
     }
 
     async getChats() {
+        if (!this.client) await this.initialize();
         return this.client.getChats();
     }
 
     async getChatHistory(chatId, limit = 20) {
         try {
+            if (!this.client) await this.initialize();
             const chat = await this.client.getChatById(chatId);
             
             let messages;
@@ -101,6 +105,7 @@ class WhatsAppClient {
 
     async getContactName(phoneNumber) {
         try {
+            if (!this.client) await this.initialize();
             // Try to get contact info
             const contact = await this.client.getContactById(phoneNumber);
             if (contact && contact.name && contact.name !== contact.number) {
@@ -121,6 +126,7 @@ class WhatsAppClient {
 
     async getGroupParticipantName(groupId, phoneNumber) {
         try {
+            if (!this.client) await this.initialize();
             const chat = await this.client.getChatById(groupId);
             if (chat.isGroup && chat.groupMetadata) {
                 const participant = chat.groupMetadata.participants.find(p => 
@@ -238,15 +244,21 @@ class WhatsAppClient {
     }
 
     onMessage(callback) {
-        this.client.on('message', callback);
+        if (this.client) {
+            this.client.on('message', callback);
+        }
     }
 
     onReady(callback) {
-        this.client.on('ready', callback);
+        if (this.client) {
+            this.client.on('ready', callback);
+        }
     }
 
     onDisconnected(callback) {
-        this.client.on('disconnected', callback);
+        if (this.client) {
+            this.client.on('disconnected', callback);
+        }
     }
 }
 
