@@ -1,4 +1,4 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const WhatsAppClient = require('../src/whatsappClient');
 const JokeService = require('../src/jokeService');
 const JokeCounter = require('../src/jokeCounterVercel');
 
@@ -29,54 +29,39 @@ module.exports = async function handler(req, res) {
   try {
     console.log('🎭 Iniciando proceso de chiste programado en Vercel...');
     
-    // Crear cliente temporal de WhatsApp
-    const client = new Client({
-      authStrategy: new LocalAuth({
-        dataPath: '/tmp/whatsapp-session'
-      }),
-      puppeteer: {
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--disable-gpu'
-        ]
-      }
-    });
-
+    // Crear cliente de WhatsApp con configuración serverless
+    const whatsappClient = new WhatsAppClient();
+    
     // Timeout para la inicialización
     const initPromise = new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('WhatsApp initialization timeout'));
       }, 25000); // 25 segundos timeout
 
-      client.on('ready', () => {
-        clearTimeout(timeout);
-        console.log('✅ WhatsApp client ready');
-        resolve();
-      });
+      // Una vez que el cliente esté inicializado, configurar eventos
+      whatsappClient.initialize().then((client) => {
+        client.on('ready', () => {
+          clearTimeout(timeout);
+          console.log('✅ WhatsApp client ready');
+          resolve();
+        });
 
-      client.on('auth_failure', (msg) => {
-        clearTimeout(timeout);
-        reject(new Error(`WhatsApp auth failed: ${msg}`));
-      });
+        client.on('auth_failure', (msg) => {
+          clearTimeout(timeout);
+          reject(new Error(`WhatsApp auth failed: ${msg}`));
+        });
 
-      client.on('qr', (qr) => {
-        console.log('⚠️ QR Code needed - WhatsApp not authenticated');
-        console.log('QR:', qr);
-      });
+        client.on('qr', (qr) => {
+          console.log('⚠️ QR Code needed - WhatsApp not authenticated');
+          console.log('QR:', qr);
+        });
+      }).catch(reject);
     });
 
-    // Inicializar cliente
-    await client.initialize();
     await initPromise;
 
     // Crear servicio de chistes con el cliente
-    const jokeService = new JokeService(client);
+    const jokeService = new JokeService(whatsappClient);
     
     // Crear contador de chistes (usando storage temporal)
     const jokeCounter = new JokeCounter();
@@ -143,7 +128,7 @@ module.exports = async function handler(req, res) {
     jokeCounter.incrementJoke(forceContextual && chatHistory && chatHistory.length > 0);
     
     // Limpiar cliente
-    await client.destroy();
+    await whatsappClient.destroy();
     
     const responseData = {
       success: true,

@@ -1,4 +1,4 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const WhatsAppClient = require('../src/whatsappClient');
 const qrcode = require('qrcode');
 
 // Endpoint para obtener QR y configurar WhatsApp inicialmente
@@ -10,26 +10,13 @@ module.exports = async function handler(req, res) {
   try {
     console.log('🔐 Iniciando proceso de autenticación WhatsApp...');
     
-    const client = new Client({
-      authStrategy: new LocalAuth({
-        dataPath: '/tmp/whatsapp-session'
-      }),
-      puppeteer: {
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--disable-gpu'
-        ]
-      }
-    });
+    const whatsappClient = new WhatsAppClient();
 
     let qrCodeData = null;
     let authStatus = 'waiting';
+
+    // Inicializar cliente y configurar eventos
+    const client = await whatsappClient.initialize();
 
     // Configurar eventos
     client.on('qr', async (qr) => {
@@ -57,9 +44,6 @@ module.exports = async function handler(req, res) {
       console.log('❌ Fallo de autenticación:', msg);
       authStatus = 'auth_failed';
     });
-
-    // Inicializar cliente
-    await client.initialize();
 
     // Esperar hasta obtener QR o estar listo
     const startTime = Date.now();
@@ -89,7 +73,7 @@ module.exports = async function handler(req, res) {
     // Limpiar cliente
     setTimeout(async () => {
       try {
-        await client.destroy();
+        await whatsappClient.destroy();
       } catch (e) {
         console.log('Error limpiando cliente:', e.message);
       }
